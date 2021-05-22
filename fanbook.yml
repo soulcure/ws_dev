@@ -1,0 +1,24 @@
+
+# websocket登录地址配置
+websocket:
+  scheme: wss  #ws  #wss
+  host: gateway.fanbook.mobi    # ws://r1.tensafe.net 开发环境  # ws://s2.tensafe.net 测试环境  # gateway.fanbook.mobi 正式环境
+  path: null 
+
+# 登录账号配置
+account:
+  #18664923439 正式环境账号
+  token: c912b6f823d925c25d14e8855c04ef5b17614324d4785275dac74b6663835b1a5818721714f0320fe3e8c1b72929e82fc5348ed3ab642f967a1bbde7929771f87fc64eec8563731ebb3c04b77b0a90266a9d7ce296f0fbc0a05732982b38bca3
+
+# 请求头部信息
+header:
+  platform: android  # 
+  version: 1.6.2
+  channel: android
+  device_id: 4e919735b3c0bb11    # localhost ,119.23.74.49
+  build_number: 71
+
+
+# platform config
+content: tuser
+times: 10000
