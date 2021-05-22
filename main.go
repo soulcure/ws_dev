@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"net/url"
@@ -18,6 +19,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"idreamsky.com/fanbook/config"
 )
+
+var index int = 0
 
 func main() {
 	f := config.NewLogFile()
@@ -83,51 +86,61 @@ func main() {
 	go func() {
 		defer close(done)
 		for {
-			_, message, err := c.ReadMessage()
+			msgType, message, err := c.ReadMessage()
 			if err != nil {
 				logrus.Error("read:", err)
 				return
 			}
 
-			//newStr := UGZipBytes(message)
-			newStr := string(message)
+			if msgType == websocket.TextMessage {
+				newStr := string(message)
+				logrus.Debug("recv: %s", newStr)
+			} else if msgType == websocket.BinaryMessage {
+				newStr := UGZipBytes(message)
+				logrus.Debug("recv: %s", newStr)
+			}
 
-			logrus.Debug("recv: %s", newStr)
 		}
 	}()
 
-	ticker := time.NewTicker(time.Second * 5)
+	ticker := time.NewTicker(time.Millisecond * 100) //100毫秒发送一条消息
 	defer ticker.Stop()
-
-	ping := "{\"type\":\"ping\"}"
 
 	for {
 		select {
 		case <-done:
 			return
 		case <-ticker.C:
-			err := c.WriteMessage(websocket.TextMessage, []byte(ping))
+			if index > config.RuleCfg.Times {
+				c.Close()
+				return
+			}
+
+			err := c.WriteMessage(websocket.TextMessage, getSendMessage(done))
 			if err != nil {
 				log.Println("write:", err)
 				return
 			}
+			//log.Println("ticker.C")
 		case <-interrupt:
 			log.Println("interrupt")
-
+			c.Close()
+			return
 			// Cleanly close the connection by sending a close message and then
 			// waiting (with timeout) for the server to close the connection.
-			err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-			if err != nil {
-				log.Println("write close:", err)
-				return
-			}
-			select {
-			case <-done:
-			case <-time.After(time.Second):
-			}
-			return
+			// err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+			// if err != nil {
+			// 	log.Println("write close:", err)
+			// 	return
+			// }
 		}
 	}
+}
+
+func getSendMessage(done chan struct{}) []byte {
+	str := fmt.Sprintf("第%d条消息：%s", index, config.RuleCfg.Content)
+	index++
+	return []byte(str)
 }
 
 // //压缩
@@ -151,7 +164,7 @@ func UGZipBytes(data []byte) string {
 
 	zr, err := gzip.NewReader(buf)
 	if err != nil {
-		log.Fatal(err)
+		return string(data)
 	}
 
 	res := new(strings.Builder)

@@ -10,12 +10,12 @@ import (
 
 //WebSocket配置
 type RuleConfig struct {
-	content string `yaml:"content"`
-	times   int    `yaml:"times"`
+	Content string `yaml:"content"`
+	Times   int    `yaml:"times"`
 }
 
 var (
-	ruleConfig RuleConfig
+	RuleCfg RuleConfig
 )
 
 func init() {
@@ -33,7 +33,7 @@ func init() {
 		logrus.Println("failed to read config file:", readErr)
 	}
 
-	if err := yaml.Unmarshal(buf, &ruleConfig); err != nil {
+	if err := yaml.Unmarshal(buf, &RuleCfg); err != nil {
 		logrus.Panic("db conf yaml Unmarshal error ")
 	}
 
