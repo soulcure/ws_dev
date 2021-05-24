@@ -19,6 +19,6 @@ func NewLogFile() *os.File {
 
 //todayFilename Get a filename based on the date, just for the sugar.
 func todayFilename() string {
-	today := time.Now().Format("2006-01-02")
+	today := time.Now().Format("2006-01-02 15:04")
 	return today + ".txt"
 }
