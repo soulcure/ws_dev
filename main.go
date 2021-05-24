@@ -106,7 +106,7 @@ func main() {
 		case <-done:
 			return
 		case <-ticker.C:
-			if seq > config.RuleCfg.Times {
+			if seq > config.RuleCfg.Times-1 {
 				//Cleanly close the connection by sending a close message and then
 				//waiting (with timeout) for the server to close the connection.
 				err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
