@@ -5,10 +5,8 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
-	"log"
 	"net/url"
 	"os"
 	"os/signal"
@@ -36,18 +34,15 @@ func main() {
 	logrus.SetLevel(logrus.DebugLevel)
 	defer func() {
 		if err := f.Close(); err != nil {
-			logrus.Printf("close log file error: %s", err)
+			logrus.Error("close log file error: %s", err)
 		}
 	}()
-
-	flag.Parse()
-	log.SetFlags(0)
 
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
 	u := url.URL{Scheme: config.WsConfig.WsInfo.Scheme, Host: config.WsConfig.WsInfo.Host, Path: config.WsConfig.WsInfo.Path}
-	logrus.Debug("connecting to=", u.String())
+	fmt.Println("connecting to=", u.String())
 
 	headerMap := map[string]string{
 		"platform":     config.HeaderCfg.HeaderInfo.Platform,
@@ -59,14 +54,14 @@ func main() {
 
 	jsonStr, err := json.Marshal(headerMap)
 
-	logrus.Debug("WebSocketDebug jsonString=:", jsonStr)
+	fmt.Println("WebSocketDebug jsonString=:", jsonStr)
 
 	if err != nil {
 		logrus.Error("json.Marshal failed:", err)
 		return
 	}
 	bs := base64.StdEncoding.EncodeToString(jsonStr)
-	logrus.Debug("WebSocketDebug base64=:", bs)
+	fmt.Println("WebSocketDebug base64=:", bs)
 
 	var p = url.Values{}
 	p.Add("id", config.Account.Account.Token)
@@ -75,11 +70,11 @@ func main() {
 	p.Add("x-super-properties", bs)
 
 	uri := u.String() + "?" + p.Encode()
-	logrus.Debug("WebSocketDebug uri=", uri)
+	fmt.Println("WebSocketDebug uri=", uri)
 
 	c, _, err := websocket.DefaultDialer.Dial(uri, nil)
 	if err != nil {
-		log.Fatal("dial:", err)
+		logrus.Error("dial:", err)
 	}
 	defer c.Close()
 
@@ -96,10 +91,10 @@ func main() {
 
 			if msgType == websocket.TextMessage {
 				newStr := string(message)
-				logrus.Debug("recv string=", newStr)
+				logrus.Debug("recv string =", newStr)
 			} else if msgType == websocket.BinaryMessage {
 				newStr := UGZipBytes(message)
-				logrus.Debug("recv: binary=", newStr)
+				logrus.Debug("recv binary =", newStr)
 			}
 
 		}
@@ -118,43 +113,31 @@ func main() {
 				//waiting (with timeout) for the server to close the connection.
 				err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 				if err != nil {
-					log.Println("write close:", err)
-					return
+					logrus.Error("write close:", err)
 				}
+				return
 			}
 			b := getSendMessage(done)
 
 			err := c.WriteMessage(websocket.TextMessage, b)
 
 			if err != nil {
-				log.Println("write:", err)
+				logrus.Error("write:", err)
 				return
 			} else {
-				logrus.Debug("send message content=", string(b))
+				logrus.Debug("send message =", string(b))
 				seq++
 			}
 		case <-interrupt:
-			log.Println("interrupt")
+			fmt.Println("interrupt")
 			c.Close()
 			return
-			// Cleanly close the connection by sending a close message and then
-			// waiting (with timeout) for the server to close the connection.
-			// err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-			// if err != nil {
-			// 	log.Println("write close:", err)
-			// 	return
-			// }
 		}
 	}
 }
 
 func getSendMessage(done chan struct{}) []byte {
 	text := fmt.Sprintf("第%d条消息：%s", seq, config.RuleCfg.Content)
-	// {
-	// 	"type": "text",
-	// 	"text": "14",
-	// 	"contentType": 0
-	// }
 	msgContent := map[string]interface{}{
 		"type":        "text",
 		"text":        text,
@@ -226,11 +209,11 @@ func UGZipBytes(data []byte) string {
 	res := new(strings.Builder)
 
 	if _, err := io.Copy(res, zr); err != nil {
-		log.Fatal(err)
+		logrus.Error(err)
 	}
 
 	if err := zr.Close(); err != nil {
-		log.Fatal(err)
+		logrus.Error(err)
 	}
 
 	return res.String()
