@@ -98,7 +98,9 @@ func main() {
 		}
 	}()
 
-	ticker := time.NewTicker(time.Millisecond * 100) //100毫秒发送一条消息
+	interval := config.RuleCfg.Interval
+	ticker := time.NewTicker(time.Duration(interval) * time.Millisecond) //100毫秒发送一条消息
+
 	defer ticker.Stop()
 
 	for {

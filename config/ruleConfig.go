@@ -14,6 +14,7 @@ type RuleConfig struct {
 	Times     int    `yaml:"times"`
 	ChannelId string `yaml:"channel_id"`
 	GuildId   string `yaml:"guild_id"`
+	Interval  int    `yaml:"interval"`
 }
 
 var (
