@@ -29,7 +29,8 @@ func main() {
 
 	//logrus.SetFormatter(&logrus.JSONFormatter{})
 	logrus.SetFormatter(&logrus.TextFormatter{
-		DisableColors: true,
+		DisableColors:   true,
+		TimestampFormat: time.StampMilli,
 	})
 	logrus.SetLevel(logrus.DebugLevel)
 	defer func() {
@@ -54,14 +55,11 @@ func main() {
 
 	jsonStr, err := json.Marshal(headerMap)
 
-	fmt.Println("WebSocketDebug jsonString=:", jsonStr)
-
 	if err != nil {
 		logrus.Error("json.Marshal failed:", err)
 		return
 	}
 	bs := base64.StdEncoding.EncodeToString(jsonStr)
-	fmt.Println("WebSocketDebug base64=:", bs)
 
 	var p = url.Values{}
 	p.Add("id", config.Account.Account.Token)
