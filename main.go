@@ -12,15 +12,17 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/bwmarrin/snowflake"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"idreamsky.com/fanbook/config"
 )
 
-var index int = 0
+var seq int = 0
 
 func main() {
 	f := config.NewLogFile()
@@ -44,7 +46,7 @@ func main() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
-	u := url.URL{Scheme: config.WsConfig.WsInfo.Scheme, Host: config.WsConfig.WsInfo.Host}
+	u := url.URL{Scheme: config.WsConfig.WsInfo.Scheme, Host: config.WsConfig.WsInfo.Host, Path: config.WsConfig.WsInfo.Path}
 	logrus.Debug("connecting to=", u.String())
 
 	headerMap := map[string]string{
@@ -88,16 +90,16 @@ func main() {
 		for {
 			msgType, message, err := c.ReadMessage()
 			if err != nil {
-				logrus.Error("read:", err)
+				fmt.Println("read:", err)
 				return
 			}
 
 			if msgType == websocket.TextMessage {
 				newStr := string(message)
-				logrus.Debug("recv: %s", newStr)
+				logrus.Debug("recv string=", newStr)
 			} else if msgType == websocket.BinaryMessage {
 				newStr := UGZipBytes(message)
-				logrus.Debug("recv: %s", newStr)
+				logrus.Debug("recv: binary=", newStr)
 			}
 
 		}
@@ -111,17 +113,26 @@ func main() {
 		case <-done:
 			return
 		case <-ticker.C:
-			if index > config.RuleCfg.Times {
-				c.Close()
-				return
+			if seq > config.RuleCfg.Times {
+				//Cleanly close the connection by sending a close message and then
+				//waiting (with timeout) for the server to close the connection.
+				err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+				if err != nil {
+					log.Println("write close:", err)
+					return
+				}
 			}
+			b := getSendMessage(done)
 
-			err := c.WriteMessage(websocket.TextMessage, getSendMessage(done))
+			err := c.WriteMessage(websocket.TextMessage, b)
+
 			if err != nil {
 				log.Println("write:", err)
 				return
+			} else {
+				logrus.Debug("send message content=", string(b))
+				seq++
 			}
-			//log.Println("ticker.C")
 		case <-interrupt:
 			log.Println("interrupt")
 			c.Close()
@@ -138,9 +149,54 @@ func main() {
 }
 
 func getSendMessage(done chan struct{}) []byte {
-	str := fmt.Sprintf("第%d条消息：%s", index, config.RuleCfg.Content)
-	index++
-	return []byte(str)
+	text := fmt.Sprintf("第%d条消息：%s", seq, config.RuleCfg.Content)
+	// {
+	// 	"type": "text",
+	// 	"text": "14",
+	// 	"contentType": 0
+	// }
+	msgContent := map[string]interface{}{
+		"type":        "text",
+		"text":        text,
+		"contentType": 0,
+	}
+
+	msgBytes, err := json.Marshal(msgContent)
+	if err != nil {
+		fmt.Println("json.Marshal failed:", err)
+		return nil
+	}
+
+	node, err := snowflake.NewNode(1)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
+	// Generate a snowflake ID.
+	snowflakeId := int64(node.Generate())
+	nonce := strconv.FormatInt(snowflakeId, 10)
+
+	message := map[string]interface{}{
+		"action":      "send",
+		"channel_id":  config.RuleCfg.ChannelId,
+		"seq":         seq,
+		"quote_l1":    nil,
+		"quote_l2":    nil,
+		"guild_id":    config.RuleCfg.GuildId,
+		"content":     string(msgBytes),
+		"ctype":       0,
+		"nonce":       nonce,
+		"app_version": "1.6.2",
+	}
+
+	b, err := json.Marshal(message)
+	if err != nil {
+		fmt.Println("json.Marshal failed:", err)
+		return nil
+	}
+
+	return b
 }
 
 // //压缩

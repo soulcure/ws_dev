@@ -10,8 +10,10 @@ import (
 
 //WebSocket配置
 type RuleConfig struct {
-	Content string `yaml:"content"`
-	Times   int    `yaml:"times"`
+	Content   string `yaml:"content"`
+	Times     int    `yaml:"times"`
+	ChannelId string `yaml:"channel_id"`
+	GuildId   string `yaml:"guild_id"`
 }
 
 var (

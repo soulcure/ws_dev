@@ -1,22 +1,26 @@
 # websocket登录地址配置
 websocket:
   scheme: wss #ws  #wss
-  host: gateway.fanbook.mobi # ws://r1.tensafe.net 开发环境  # ws://s2.tensafe.net 测试环境  # gateway.fanbook.mobi 正式环境
-  path: null
+  host: s2.tensafe.net # ws://r1.tensafe.net 开发环境  # ws://s2.tensafe.net 测试环境  # gateway.fanbook.mobi 正式环境
+  path: /websocket
 
 # 登录账号配置
 account:
   #18664923439 正式环境账号
-  token: c912b6f823d925c25d14e8855c04ef5b17614324d4785275dac74b6663835b1a5818721714f0320fe3e8c1b72929e82fc5348ed3ab642f967a1bbde7929771f87fc64eec8563731ebb3c04b77b0a90266a9d7ce296f0fbc0a05732982b38bca3
+  #token: c912b6f823d925c25d14e8855c04ef5b17614324d4785275dac74b6663835b1a5818721714f0320fe3e8c1b72929e82fc5348ed3ab642f967a1bbde7929771f87fc64eec8563731ebb3c04b77b0a90266a9d7ce296f0fbc0a05732982b38bca3
 
+  #18664923400 测试环境
+  token: a169e07d91846a31602db66a30c6b1ab5c15e9cd23b96781d66f01fa80ce8cf9037881f6c58c156ec6f9458cc6c3b273223b016650adabeac6be65100f6637a21e5f9e5c800b4dc550a6a28b48bb433c2f8e269dcf17e401c5be137f4caca54c
 # 请求头部信息
 header:
   platform: android #
   version: 1.6.2
   channel: android
-  device_id: 4e919735b3c0bb11 # localhost ,119.23.74.49
+  device_id: 63bff147c941a7ee # 63bff147c941a7ee android 模拟器 ；4e919735b3c0bb11  android pixel3l
   build_number: 71
 
 # platform config
+channel_id: 213199799866884096   #213199799866884096 测试环境 顺序计数 频道
 content: Flutter 是 Google 开源的 UI 工具包，帮助开发者通过一套代码库高效构建多平台精美应用，支持移动、Web、桌面和嵌入式平台
-times: 10000
+times: 2
+guild_id: 113837472030396416  #113837472030396416 服务器id
