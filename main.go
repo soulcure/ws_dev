@@ -74,6 +74,8 @@ func main() {
 	if err != nil {
 		logrus.Error("dial:", err)
 	}
+
+	fmt.Println("connect websocket success", u.String())
 	defer c.Close()
 
 	done := make(chan struct{})
